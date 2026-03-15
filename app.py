@@ -1,15 +1,15 @@
-import streamlit as st   导入streamlit作为st
-import torch   进口火炬
-import torch.nn.functional as F将torch.nn.function导入为F
+import streamlit as st
+import torch
+import torch.nn.functional as F
 import librosa
-import librosa.display   进口librosa.display
-import numpy as np   将numpy导入为np
-import matplotlib.pyplot as plt进口matplotlib。将Pyplot转换为PLT
-import plotly.graph_objects as go进口的阴谋。Graph_objects
-import plotly.express as px   进口的阴谋。表示为px
-import pandas as pd   导入pandas作为pd
+import librosa.display
+import numpy as np
+import matplotlib.pyplot as plt
+import plotly.graph_objects as go
+import plotly.express as px
+import pandas as pd
 import os
-from sklearn.metrics import confusion_matrix从sklearn。度量导入confusion_matrix
+from sklearn.metrics import confusion_matrix
 
 from model import CNN_LSTM_Model, CNN_Model, LSTM_Model
 
@@ -50,7 +50,7 @@ st.markdown("""
 
 # --- 3. 参数与映射 ---
 INPUT_SIZE = 40
-HIDDEN_SIZE = 128   Hidden_size = 128
+HIDDEN_SIZE = 128
 NUM_CLASSES = 6
 DURATION = 3
 SAMPLE_RATE = 22050
@@ -83,7 +83,7 @@ def plot_radar_chart(probs):
     categories = list(EMOTION_LABELS.values())
     values = list(probs)
     
-    values += [values[0]]   Values = [Values [0]]
+    values += [values[0]]
     categories += [categories[0]]
     
     fig = go.Figure()
@@ -147,7 +147,7 @@ if page == "🎧 语音分析工作台":
         if file_details:
              st.info(f"**当前文件:** {file_details['name']} | **大小:** {file_details['size']}")
         st.audio(y, sample_rate=sr)
-        st.markdown("---")   st.markdown(“-”)
+        st.markdown("---")
         
         mfcc_features = preprocess_audio(y, sr)
         input_tensor = torch.tensor(mfcc_features, dtype=torch.float32).unsqueeze(0)
@@ -169,7 +169,7 @@ if page == "🎧 语音分析工作台":
         with col1:
             st.markdown("### 🎵 声学特征与波形")
             
-            fig_wave, ax_wave = plt.subplots(figsize=(8, 2.5))Fig_wave, ax_wave = plt。次要情节(figsize = (2.5 8))
+            fig_wave, ax_wave = plt.subplots(figsize=(8, 2.5))
             fig_wave.patch.set_facecolor('#FFFFFF') 
             ax_wave.set_facecolor('#F8F9FA')
             librosa.display.waveshow(y, sr=sr, ax=ax_wave, color='#6e8efb', alpha=0.9)
@@ -277,7 +277,7 @@ elif page == "📊 模型基线评估报告":
                         best_cm = confusion_matrix(all_labels, all_preds)
                 else:
                     results_acc[name] = 0.0
-            return results_acc, best_cm返回results_acc， best_cm
+            return results_acc, best_cm
         
         # 🌟 【核心修改点】如果在云端（没有X.npy），直接返回预设好的漂亮成绩，防崩溃！
         else:
@@ -288,7 +288,7 @@ elif page == "📊 模型基线评估报告":
                 "CNN-LSTM (本项目)": 91.20
             }
             # 这是一个虚拟生成的高度真实的混淆矩阵（对角线数值高，准确率漂亮）
-            best_cm = np.array([   Best_cm = np.array([
+            best_cm = np.array([
                 [85,  2,  1,  0,  3,  1],
                 [ 4, 78,  0,  2,  6,  2],
                 [ 0,  1, 88,  1,  0,  2],
@@ -296,50 +296,50 @@ elif page == "📊 模型基线评估报告":
                 [ 2,  4,  0,  4, 80,  1],
                 [ 1,  2,  2,  0,  1, 90]
             ])
-            return results_acc, best_cm返回results_acc， best_cm
+            return results_acc, best_cm
 
     if st.button("🚀 生成测试集实验报告", type="primary"):
         with st.spinner("🧠 正在生成模型对比报告，请稍候..."):
-            accuracies, best_cm = evaluate_all_models()准确度，best_cm = evaluate_all_models（）
+            accuracies, best_cm = evaluate_all_models()
         st.success("✅ 实验评估报告加载完成！")
         
-        col1, col2, col3 = st.columns(3)Col1, col2, col3 = st
+        col1, col2, col3 = st.columns(3)
         col1.metric("纯 CNN 模型准确率", f"{accuracies.get('纯 CNN 模型', 0):.2f}%")
         col2.metric("纯 LSTM 模型准确率", f"{accuracies.get('纯 LSTM 模型', 0):.2f}%")
         col3.metric("🏆 CNN-LSTM (本项目)", f"{accuracies.get('CNN-LSTM (本项目)', 0):.2f}%", "表现最优")
-        st.markdown("---")   st.markdown   减价(“-”)
+        st.markdown("---")
         
-        chart_col1, chart_col2 = st.columns(2)chart_col2 = st.columns(2)
-        with chart_col1:   chart_col1:
+        chart_col1, chart_col2 = st.columns(2)
+        with chart_col1:
             df_acc = pd.DataFrame(list(accuracies.items()), columns=['模型', '准确率 (%)'])
             fig_bar = px.bar(df_acc, x='模型', y='准确率 (%)', color='模型',
                              color_discrete_sequence=['#B0BEC5', '#B0BEC5', '#6e8efb'], text='准确率 (%)', title="多模型性能对比柱状图")
-            fig_bar.update_traces(texttemplate='%{text:.2f}%', textposition='outside'): fig_bar.update_traces (texttemplate = ' %{文本。2 f} %”,textposition =“外”)
+            fig_bar.update_traces(texttemplate='%{text:.2f}%', textposition='outside')
             fig_bar.update_layout(showlegend=False)
-            st.plotly_chart(fig_bar, use_container_width=True)st.plotly_chart (fig_bar use_container_width = True)
+            st.plotly_chart(fig_bar, use_container_width=True)
             
-        with chart_col2:   chart_col2:
-            if best_cm is not None:   如果best_cm不是None：
-                labels_list = [val.split(' ')[0] for val in EMOTION_LABELS.values()]labels_list = [val.split（' '）在EMOTION_LABELS.values（）中为val设置[0]]
-                fig_cm = px.imshow(best_cm, text_auto=True, x=labels_list, y=labels_list,Fig_cm = px。# # # # # # # # # # # # # # # #
+        with chart_col2:
+            if best_cm is not None:
+                labels_list = [val.split(' ')[0] for val in EMOTION_LABELS.values()]
+                fig_cm = px.imshow(best_cm, text_auto=True, x=labels_list, y=labels_list,
                                    color_continuous_scale='Blues', aspect="auto", title="CNN-LSTM 模型混淆矩阵")
                 fig_cm.update_layout(
                     xaxis_title="<b>预测标签 (Predicted)</b>",
                     yaxis_title="<b>真实标签 (True)</b>"
                 )
-                st.plotly_chart(fig_cm, use_container_width=True)st.plotly_chart (fig_cm use_container_width = True)
+                st.plotly_chart(fig_cm, use_container_width=True)
                 
-        st.markdown("---")   st.markdown   减价(“-”)
+        st.markdown("---")
         # 即使没有跑代码，只要把 best_model_log.csv 传上 GitHub，就会有这两张漂亮的折线图
-        log_file = 'best_model_log.csv'Log_file = ‘best_model_log.csv’
-        if os.path.exists(log_file):如果os.path.exists (log_file):
-            df_log = pd.read_csv(log_file)Df_log = pd.read_csv（log_file）
-            curve_col1, curve_col2 = st.columns(2)Curve_col1, curve_col2 = st.columns(2)
-            with curve_col1:   curve_col1:
+        log_file = 'best_model_log.csv'
+        if os.path.exists(log_file):
+            df_log = pd.read_csv(log_file)
+            curve_col1, curve_col2 = st.columns(2)
+            with curve_col1:
                 fig_loss = px.line(df_log, x='Epoch', y='Loss', title='训练误差下降曲线 (Training Loss)', markers=True)
-                fig_loss.update_traces(line_color='#FF6584')fig_loss.update_traces (line_color = # FF6584)
-                st.plotly_chart(fig_loss, use_container_width=True)st.plotly_chart (fig_loss use_container_width = True)
-            with curve_col2:   curve_col2:
+                fig_loss.update_traces(line_color='#FF6584')
+                st.plotly_chart(fig_loss, use_container_width=True)
+            with curve_col2:
                 fig_acc = px.line(df_log, x='Epoch', y='Accuracy', title='验证集准确率上升曲线 (Validation Accuracy)', markers=True)
-                fig_acc.update_traces(line_color='#6e8efb')fig_acc.update_traces (line_color = # 6 e8efb)
-                st.plotly_chart(fig_acc, use_container_width=True   真正的   真正的   真正的   真正的   真正的   真正的)st.plotly_chart (fig_acc use_container_width = True   真正的   真正的   真正的   真正的   真正的   真正的)
+                fig_acc.update_traces(line_color='#6e8efb')
+                st.plotly_chart(fig_acc, use_container_width=True)
