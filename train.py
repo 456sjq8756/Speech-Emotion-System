@@ -1,3 +1,5 @@
+import numpy as np
+from sklearn.metrics import confusion_matrix  # ✨ 新增：用于计算混淆矩阵
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -7,13 +9,15 @@ from model import CNN_LSTM_Model, CNN_Model, LSTM_Model
 import os
 import csv  # ✨ 新增：用于保存训练日志
 
-# --- 1. 超参数配置 ---
-BATCH_SIZE = 16
+# ==========================================
+# ✨ 调参修改 1：增加学习时间、批次大小和脑容量
+# ==========================================
+BATCH_SIZE = 32         # 原来是 16，增加到 32 让梯度下降更稳定
 LEARNING_RATE = 0.001
-EPOCHS = 50
+EPOCHS = 100            # 原来是 50，增加到 100 让模型学得更透彻
 NUM_CLASSES = 6
 INPUT_SIZE = 40
-HIDDEN_SIZE = 128
+HIDDEN_SIZE = 256       # 原来是 128，增加 LSTM 脑容量
 
 DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 print(f"当前使用的训练设备: {DEVICE}")
@@ -49,9 +53,15 @@ def train():
         criterion = nn.CrossEntropyLoss()
         optimizer = optim.Adam(model.parameters(), lr=LEARNING_RATE)
 
+        # ==========================================
+        # ✨ 调参修改 3 (上)：定义学习率调度器
+        # 每隔 30 个 Epoch，把学习率乘以 0.5 (即减半)
+        # ==========================================
+        scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=30, gamma=0.5)
+
         best_acc = 0.0
 
-        # ✨ 新增：用于记录当前模型的训练历史
+        # 用于记录当前模型的训练历史
         training_history = []
         csv_filename = save_path.replace('.pth', '_log.csv')
 
@@ -82,17 +92,45 @@ def train():
             epoch_acc = 100 * correct / total
             avg_loss = running_loss / len(train_loader)
 
-            print(f"[{model_name}] Epoch [{epoch + 1}/{EPOCHS}] -> Loss: {avg_loss:.4f} | Accuracy: {epoch_acc:.2f}%")
+            # 获取当前最新的学习率，打印出来让我们看到它在变小
+            current_lr = scheduler.get_last_lr()[0]
+            print(f"[{model_name}] Epoch [{epoch + 1}/{EPOCHS}] -> Loss: {avg_loss:.4f} | Accuracy: {epoch_acc:.2f}% | LR: {current_lr:.6f}")
 
             # 记录当前 Epoch 的数据
             training_history.append([epoch + 1, avg_loss, epoch_acc])
 
             if epoch_acc > best_acc:
                 best_acc = epoch_acc
+                # 1. 保存模型权重
                 torch.save(model.state_dict(), save_path)
-                print(f"  🔥 准确率提升！已保存最优模型权重")
 
-        # ✨ 新增：将训练记录写入 CSV 文件
+                # ✨ 新增：2. 计算并保存混淆矩阵 (为了让网页端能显示)
+                all_preds = []
+                all_labels = []
+                model.eval()
+                with torch.no_grad():
+                    for features, labels in test_loader:
+                        features = features.to(DEVICE)
+                        outputs = model(features)
+                        _, predicted = torch.max(outputs.data, 1)
+                        all_preds.extend(predicted.cpu().numpy())
+                        all_labels.extend(labels.numpy())
+
+                # 计算矩阵
+                cm = confusion_matrix(all_labels, all_preds)
+                # 保存为 .npy 文件，方便 app.py 读取
+                cm_filename = save_path.replace('.pth', '_cm.npy')
+                np.save(cm_filename, cm)
+
+                print(f"  🔥 准确率提升！已保存最优模型和混淆矩阵")
+
+            # ==========================================
+            # ✨ 调参修改 3 (下)：更新学习率
+            # 注意：这句必须在每个 epoch 循环的最后执行！
+            # ==========================================
+            scheduler.step()
+
+        # 将训练记录写入 CSV 文件
         with open(csv_filename, 'w', newline='', encoding='utf-8') as f:
             writer = csv.writer(f)
             writer.writerow(['Epoch', 'Loss', 'Accuracy'])

@@ -63,6 +63,13 @@ def process_data():
             try:
                 audio, sr = librosa.load(file_path, sr=SAMPLE_RATE, duration=DURATION)
 
+                # ✨ 新增：工业级 VAD (静音消除)
+                # 切除首尾低于 30 分贝的静音，让模型只专注学习“人声”特征
+                audio_trimmed, _ = librosa.effects.trim(audio, top_db=30)
+                # 如果切完之后音频长度还大于 0.5 秒，就使用切掉静音的音频
+                if len(audio_trimmed) > sr * 0.5:
+                    audio = audio_trimmed
+
                 # 1. 原始数据
                 feat_org = get_features(audio, sr)
                 if feat_org is not None:
