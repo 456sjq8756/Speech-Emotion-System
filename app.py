@@ -14,7 +14,9 @@ from torch.utils.data import DataLoader
 
 from model import CNN_LSTM_Model, CNN_Model, LSTM_Model
 from dataset import load_data
-
+# ✨ 新增：解决 Matplotlib 中文显示为方块的问题
+plt.rcParams['font.sans-serif'] = ['SimHei']  # 设置默认字体为黑体
+plt.rcParams['axes.unicode_minus'] = False    # 解决保存图像是负号 '-' 显示为方块的问题
 # --- 1. 页面基础配置 ---
 st.set_page_config(page_title="语音情感分析系统", layout="wide", page_icon="🎙️")
 
@@ -44,7 +46,7 @@ st.markdown("""
 
 # --- 3. 参数与映射 ---
 INPUT_SIZE = 40
-HIDDEN_SIZE = 128
+HIDDEN_SIZE = 256
 NUM_CLASSES = 6
 DURATION = 3
 SAMPLE_RATE = 22050
@@ -135,20 +137,17 @@ if page == "🎧 语音分析工作台":
     def analyze_audio_ui(audio_source, file_details=None):
         y, sr = librosa.load(audio_source, sr=SAMPLE_RATE, duration=DURATION)
 
-        # ⚠️ 【已经注释掉 VAD 处理】
-        # 为了与 make_data.py 训练时的预处理严格保持一致，这里取消 VAD 截断。
-        # y_trimmed, index = librosa.effects.trim(y, top_db=30)
-        # if len(y_trimmed) > sr * 0.5:
-        #     y = y_trimmed
-        # elif len(y_trimmed) <= sr * 0.5:
-        #     st.warning("⚠️ 语音过短或声音过小，可能影响精度。")
-
-        # 判断语音是否过短 (仅做安全提醒，不修改音频)
-        if len(y) <= sr * 0.5:
-             st.warning("⚠️ 语音过短，可能影响精度。")
+        # 🌟 恢复 VAD 处理！(此时已与 make_data.py 100% 对齐)
+        y_trimmed, index = librosa.effects.trim(y, top_db=30)
+        if len(y_trimmed) > sr * 0.5:
+            y = y_trimmed
+        elif len(y_trimmed) <= sr * 0.5:
+            st.warning("⚠️ 语音过短或声音过小，可能影响精度。")
 
         if privacy_mode:
             y = librosa.effects.pitch_shift(y, sr=sr, n_steps=4)
+
+        # 后续提取特征的代码保持不变...
 
         if file_details:
             st.info(f"**当前文件:** {file_details['name']} | **大小:** {file_details['size']}")
